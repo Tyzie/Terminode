@@ -1,33 +1,52 @@
 import os
 from typing import List
+from datetime import datetime
+from pathlib import Path
 
 import config
 from sys_controller import execute_system_command
 import commands #This import need for loading built-in module
 from commands_controller import commands_return, load_modules
+from logs_contoller import create_log
 
 
 #This controller will load user custom modules
 load_modules('modules')
+now = datetime.now()
+time_format = '%H:%M:%S'
+
+if os.name == 'nt':
+    os.system('chcp 65001 > nul')
 
 class Terminode:
     def __init__(self):
         self.version = config.console_version
         self.cur_dir = os.getcwd()
         self.username = config.username
-        self.input_line = f"{self.username} | {self.cur_dir} | "
+        self.prompt = f"{now:{time_format}} | {self.username} | {self.cur_dir} | "
         self.commands = commands_return()
+        self.current_venv = None
 
     def parse_input(self, input_str: str) -> List[str]:
         return input_str.strip().split()
+    
+    def check_venv(self):
+        venv_path = os.environ.get('VIRTUAL_ENV')
+
+        if venv_path != self.current_venv:
+            self.current_venv = venv_path
+            return f"({Path(venv_path).name}) " if venv_path else ""
+    
+        return None
 
     def run(self):
         print(f"Terminode - {self.version}")
         print("Enter 'help' for commands list / Enter 'exit' for exit app")
+        create_log('Started Terminode', 'info')
         
         while True:
             try:
-                user_input = input(self.input_line).strip()
+                user_input = input(self.prompt).strip()
                 if not user_input:
                     continue
                 
@@ -43,6 +62,7 @@ class Terminode:
                     
             except KeyboardInterrupt:
                 print("\nFor quit enter 'exit'")
+                create_log("Type exit for quit", "warning")
 
             except EOFError:
                 print()
@@ -50,10 +70,10 @@ class Terminode:
 
             except Exception as e:
                 print(f"Error: {e}")
+                create_log(f"Error: {e}", "error")
 
     def update_prompt(self):
-        self.input_line = f"{self.username} | {os.getcwd()} | "
+        self.prompt = f"{now:{time_format}} | {self.username} | {os.getcwd()} | "
 
 terminal = Terminode()
-
 terminal.run()

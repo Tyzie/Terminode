@@ -5,6 +5,7 @@ import importlib
 import inspect
 
 import config
+from logs_contoller import create_log
 
 COMMANDS: Dict[str, Callable] = {}
 MODULES: Dict[str, Callable] = {}
@@ -22,9 +23,11 @@ def command(name: Optional[str] = None):
 
 def module(name: Optional[str] = None):
     MODULES[name] = name
+    create_log(f"Registered module: {name}", "info")
 
 def register_command(name: str, func: Callable):
     COMMANDS[name] = func
+    create_log(f"Registered command: {name}", "info")
 
 def load_modules(folder_path: str):
     folder = Path(folder_path)
@@ -37,7 +40,7 @@ def load_modules(folder_path: str):
         
         try:
             module = importlib.import_module(f"{folder_path}.{module_name}")
-            
+            create_log(f"Found module {module}", "debug")
             for _, func in inspect.getmembers(module, inspect.isfunction):
                 if hasattr(func, "_is_command"):
                     cmd_name = getattr(func, "_command_name", func.__name__)
@@ -45,6 +48,7 @@ def load_modules(folder_path: str):
                     
         except ImportError as e:
             print(f"Loading error {module_name}: {e}")
+            create_log(f"Error load module {module_name}: {e}", "error")
 
 @command(name='help')
 def help_command(args: List[str] = None):

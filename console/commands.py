@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from commands_controller import command
+from logs_contoller import create_log
 
 @command(name='exit')
 def exit_command(args: List[str] = None):
@@ -30,9 +31,11 @@ def cd_command(args: List[str] = None):
 
         try:
             os.chdir(new_dir)
+            create_log(f"Changed dir {new_dir}", "debug")
 
         except Exception as e:
             print(f"Error: {e}")
+            create_log(f"Error: {e}", 'error')
 
 @command(name='mud')
 def move_up_cd_command(arg: List[str] = None):
@@ -42,6 +45,7 @@ def move_up_cd_command(arg: List[str] = None):
     parent_dir = str(Path(current_dir).parent)
         
     os.chdir(parent_dir)
+    create_log(f"Move up to dir {parent_dir}", "debug")
 
 @command(name='dir')
 def dir_command(args: List[str] = None):
@@ -50,10 +54,10 @@ def dir_command(args: List[str] = None):
 
     try:
         items = os.listdir(path)
-
+        create_log(f"Search files in {path}", "debug")
         for item in items:
             full_path = os.path.join(path, item)
-
+            create_log(f"Found {full_path}", "debug")
             if os.path.isdir(full_path):
                 print(f"FOLDER | {item}")
 
@@ -65,3 +69,4 @@ def dir_command(args: List[str] = None):
 
     except Exception as e:
         print(f"Error: {e}")
+        create_log(f"Error: {e}", 'error')

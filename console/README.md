@@ -1,3 +1,0 @@
-# Terminode
-
-Console app

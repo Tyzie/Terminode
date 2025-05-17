@@ -7,20 +7,20 @@ from datetime import datetime
 from commands_controller import command
 from logs_contoller import create_log
 
-@command(name='exit')
+@command(name='exit', category='Terminal')
 def exit_command(args: List[str] = None):
     """Exit from app."""
 
     print("Goodbye!")
     sys.exit(0)
 
-@command(name='clear')
+@command(name='clear', category='Terminal')
 def clear_command(args: List[str] = None):
     """Clear all history on screen."""
 
     os.system('cls' if os.name == 'nt' else 'clear')
 
-@command(name='cd')
+@command(name='cd', category='Files')
 def cd_command(args: List[str] = None):
     """Change directory/folder"""
 
@@ -41,7 +41,7 @@ def cd_command(args: List[str] = None):
             print(f"Error: {e}")
             create_log(f"Error: {e}", 'error')
 
-@command(name='mud')
+@command(name='mud', category='Files')
 def move_up_cd_command(arg: List[str] = None):
     """Move to parent directory."""
 
@@ -51,7 +51,7 @@ def move_up_cd_command(arg: List[str] = None):
     os.chdir(parent_dir)
     create_log(f"Move up to dir {parent_dir}", "debug")
 
-@command(name='dir')
+@command(name='dir', category='Files')
 def dir_command(args: List[str] = None):
     """View directory files"""
     path = args[0] if args else '.'
@@ -75,7 +75,7 @@ def dir_command(args: List[str] = None):
         print(f"Error: {e}")
         create_log(f"Error: {e}", 'error')
 
-@command('time')
+@command(name='time', category='Terminal')
 def time_command(args: List[str] = None):
     """Show time now"""
     now = datetime.now()
@@ -83,7 +83,7 @@ def time_command(args: List[str] = None):
 
     print(f"Time: {now:{time_format}}")
 
-@command('say')
+@command(name='say', category='Terminal')
 def say_command(text: Text = None):
     """Print your text on screen"""
     formatted = ''

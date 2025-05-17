@@ -9,11 +9,13 @@ from logs_contoller import create_log
 
 COMMANDS: Dict[str, Callable] = {}
 MODULES: Dict[str, Callable] = {}
+CATEGORIES: Dict[str, Callable] = {}
 
-def command(name: Optional[str] = None):
+def command(name: Optional[str] = None, category: Optional[str] = None):
     def decorator(func):
         cmd_name = name or func.__name__
-        register_command(cmd_name, func)
+        cmd_category = category
+        register_command(cmd_name, cmd_category, func)
             
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -25,9 +27,12 @@ def module(name: Optional[str] = None):
     MODULES[name] = name
     create_log(f"Registered module: {name}", "info")
 
-def register_command(name: str, func: Callable):
+def register_command(name: str, category: str, func: Callable):
     COMMANDS[name] = func
-    create_log(f"Registered command: {name}", "info")
+    if category == None:
+        category = 'Unknown'
+    CATEGORIES[name] = category
+    create_log(f"Registered command: {name} with category {category}", "info")
 
 def load_modules(folder_path: str):
     folder = Path(folder_path)
@@ -50,16 +55,41 @@ def load_modules(folder_path: str):
             print(f"Loading error {module_name}: {e}")
             create_log(f"Error load module {module_name}: {e}", "error")
 
-@command(name='help')
+@command(name='help', category='Terminal')
 def help_command(args: List[str] = None):
     """Print list of commands"""
+    if args == None:
+        print(f"Command list:")
+        max_len = max(len(cmd) for cmd in COMMANDS)
+        max_key = max(CATEGORIES.keys(), key=lambda k: len(CATEGORIES[k]))
+        max_value = len(CATEGORIES[max_key])
+    
+        for cmd, func in sorted(COMMANDS.items()):
+            doc = func.__doc__ or "Description not found"
+            categ = str(CATEGORIES.get(cmd))
+            print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)} - {doc}")
 
-    print(f"Command list:")
-    max_len = max(len(cmd) for cmd in COMMANDS)
+    else:
+        print(f"Command list on category {args[0]}:")
+        max_len = max(len(cmd) for cmd in COMMANDS)
+        max_key = max(CATEGORIES.keys(), key=lambda k: len(CATEGORIES[k]))
+        max_value = len(CATEGORIES[max_key])
+    
+        for cmd, func in sorted(COMMANDS.items()):
+            doc = func.__doc__ or "Description not found"
+            categ = str(CATEGORIES.get(cmd))
+            if categ.lower() == args[0].lower():
+                print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)} - {doc}")
 
-    for cmd, func in sorted(COMMANDS.items()):
-        doc = func.__doc__ or "Description not found"
-        print(f" {cmd.ljust(max_len)} - {doc}")
+@command(name='ctgs', category='Terminal')
+def categories_help_command(args: List[str] = None):
+    """Print list of categories"""
+    print('All categories:')
+    max_key = max(CATEGORIES.keys(), key=lambda k: len(CATEGORIES[k]))
+    max_value = len(CATEGORIES[max_key])
+
+    for cat in set(CATEGORIES.values()):
+        print(f'| {cat.ljust(max_value)} |')
 
 def commands_return():
     if MODULES:

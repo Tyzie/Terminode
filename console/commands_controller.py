@@ -57,7 +57,9 @@ def load_modules(folder_path: str):
 
 @command(name='help', category='Terminal')
 def help_command(args: List[str] = None):
-    """Print list of commands"""
+    """Print list of commands.
+Type 'help <category>' to see commands in choosen category."""
+
     if args == None:
         print(f"Command list:")
         max_len = max(len(cmd) for cmd in COMMANDS)
@@ -67,7 +69,7 @@ def help_command(args: List[str] = None):
         for cmd, func in sorted(COMMANDS.items()):
             doc = func.__doc__ or "Description not found"
             categ = str(CATEGORIES.get(cmd))
-            print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)} - {doc}")
+            print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)}\n{doc}\n")
 
     else:
         print(f"Command list on category {args[0]}:")
@@ -79,7 +81,7 @@ def help_command(args: List[str] = None):
             doc = func.__doc__ or "Description not found"
             categ = str(CATEGORIES.get(cmd))
             if categ.lower() == args[0].lower():
-                print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)} - {doc}")
+                print(f"{categ.ljust(max_value)} > {cmd.ljust(max_len)}\n{doc}\n")
 
 @command(name='ctgs', category='Terminal')
 def categories_help_command(args: List[str] = None):

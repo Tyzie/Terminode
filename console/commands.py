@@ -75,6 +75,59 @@ def dir_command(args: List[str] = None):
         print(f"Error: {e}")
         create_log(f"Error: {e}", 'error')
 
+@command(name='cfl', category='Files')
+def create_file_command(file_name: Text = None):
+    """Create file in choosen directory with your content.
+Type 'cfl <file_name>' to create file"""
+    try:
+        if file_name:
+            checker = True
+            print(f"Write your file content. Type 'end_file' to stop writing.")
+            content = ''
+
+            while checker == True:
+                text = input('>>> ')
+                if text != 'end_file':
+                    content += f'{text}\n'
+                else:
+                    checker = False
+
+            with open(file_name[0], 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            print(f"File created: {file_name[0]}")
+            create_log(f"File created {file_name[0]}", 'debug')
+        else:
+            print(f"Choose file name!")
+            create_log(f"File name was not choosen", 'warn')
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        create_log(f"Error: {e}", 'error')
+
+@command(name="dfl", category='Files')
+def delete_file_command(file_name: Text = None):
+    """Delete choosen file in current directory.
+Type 'dfl <file name>'"""
+
+    try:
+        if os.path.isdir(file_name[0]):
+            print(f"This is directory, not file!")
+            create_log(f"{file_name[0]} is directory!", "warn")
+            
+        if not os.path.exists(file_name[0]):
+            print(f"File not found: {file_name[0]}")
+            create_log(f"{file_name[0]} not found!", "info")
+            
+        os.remove(file_name[0])
+        print(f"File deleted: {file_name[0]}")
+        create_log(f"{file_name[0]} deleted", "debug")
+
+    except Exception as e:
+        print(f"Error: {e}")
+        create_log(f"Error: {e}", "error")
+
+
 @command(name='time', category='Terminal')
 def time_command(args: List[str] = None):
     """Show time now"""

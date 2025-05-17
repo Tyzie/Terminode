@@ -9,9 +9,9 @@ def create_log(text: str, type: str):
                 logger.debug(text)
             case "info":
                 logger.info(text)
-            case "success":
+            case "suc":
                 logger.success(text)
-            case "warning":
+            case "warn":
                 logger.warning(text)
             case "error":
                 logger.error(text)

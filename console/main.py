@@ -1,7 +1,6 @@
 import os
 from typing import List
 from datetime import datetime
-from pathlib import Path
 
 import config
 from sys_controller import execute_system_command
@@ -25,19 +24,9 @@ class Terminode:
         self.username = config.username
         self.prompt = f"{now:{time_format}} | {self.username} | {self.cur_dir} | "
         self.commands = commands_return()
-        self.current_venv = None
 
     def parse_input(self, input_str: str) -> List[str]:
         return input_str.strip().split()
-    
-    def check_venv(self):
-        venv_path = os.environ.get('VIRTUAL_ENV')
-
-        if venv_path != self.current_venv:
-            self.current_venv = venv_path
-            return f"({Path(venv_path).name}) " if venv_path else ""
-    
-        return None
 
     def run(self):
         print(f"Terminode - {self.version}")

@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Text
 import sys
 import os
 from pathlib import Path
+from datetime import datetime
 
 from commands_controller import command
 from logs_contoller import create_log
@@ -27,7 +28,10 @@ def cd_command(args: List[str] = None):
        new_dir = os.path.expanduser('~')
 
     else:
-        new_dir = args[0]
+        new_dir = ''
+        for i in args:
+            new_dir += i
+            new_dir += ' '
 
         try:
             os.chdir(new_dir)
@@ -70,3 +74,22 @@ def dir_command(args: List[str] = None):
     except Exception as e:
         print(f"Error: {e}")
         create_log(f"Error: {e}", 'error')
+
+@command('time')
+def time_command(args: List[str] = None):
+    """Show time now"""
+    now = datetime.now()
+    time_format = '%d-%m-%Y %H:%M:%S'
+
+    print(f"Time: {now:{time_format}}")
+
+@command('say')
+def say_command(text: Text = None):
+    """Print your text on screen"""
+    formatted = ''
+
+    for i in text:
+        formatted += i
+        formatted += ' '
+
+    print(formatted)

@@ -1,9 +1,12 @@
 import subprocess
 
+from logs_contoller import create_log
+
 
 #This code will work if custom command not found
 def execute_system_command(command: str):
     try:
+        create_log(f"Use system command {command}", 'debug')
         result = subprocess.run(
             command, 
             shell=True, 
@@ -18,3 +21,4 @@ def execute_system_command(command: str):
             
     except subprocess.CalledProcessError as e:
             print(f"Error: {e.stderr}")
+            create_log(f"Error in sys command: {e.stderr}", 'error')

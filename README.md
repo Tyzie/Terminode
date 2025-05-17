@@ -32,7 +32,8 @@ If you want to view this list - write 'help' in Terminode.
 
 ### Changing settings
 The settings of Terminode are located in the file `config.py`.
-Now this file is like a dummy. In config you can see versions of app and modules and change username.
+In config you can change your username.
+Also you can to turn off logs (logs default on)
 
 To change the name, enter new data into the variable `username`
 

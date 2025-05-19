@@ -33,11 +33,25 @@ If you want to view this list - write 'help' in Terminode.
 ### Changing settings
 The settings of Terminode are located in the file `config.py`.
 In config you can change your username.
-Also you can to turn off logs (logs default on)
 
 To change the name, enter new data into the variable `username`
 
 Example: `username = 'terminode'`
+
+Also you can work with logs. To turn of logs use variable `use_logs` (default - True)
+
+To change logs max size use variable `log_max_size`
+
+Example: `log_max_size = '15 KB'`
+
+In Terminode you can work with fast commands!
+Its faster, than writing full command many times.
+And you can change starter decorator of this command.
+Default - `!`
+
+To change use variable `fast_command_decorator`
+
+Example: `fast_command_decorator = '?'`
 
 ### Writing custom modules
 #### Main information about modules

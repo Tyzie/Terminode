@@ -7,6 +7,10 @@ import json
 
 from commands_controller import command
 from logs_contoller import create_log
+from sys_controller import (get_script_root,
+                            find_file_in_root)
+
+sc_folder = get_script_root()
 
 @command(name='exit', category='Terminal')
 def exit_command(args: List[str] = None):
@@ -152,7 +156,7 @@ def say_command(text: Text = None):
 def use_fast_command_command(name: Text = None):
     """Use fast command from file. Don't use this command."""
 
-    with open('saved_commands.json', 'r') as f:
+    with open(find_file_in_root('saved_commands.json'), 'r') as f:
         user_cmd = json.load(f)
 
     cmd = user_cmd.get(name)
@@ -169,13 +173,13 @@ This command also can edit your fast commands."""
     name = input("Name of fast command (without space): ")
     fast_command = input("Command for saving: ")
 
-    if os.path.isfile("saved_commands.json"):
+    if os.path.isfile(find_file_in_root('saved_commands.json')):
         ...
     else:
-        with open('saved_commands.json', 'w') as f:
+        with open(find_file_in_root('saved_commands.json'), 'w') as f:
             ... # Create file if not exists
 
-    with open('saved_commands.json', 'r') as f:
+    with open(find_file_in_root('saved_commands.json'), 'r') as f:
         try:
             user_cmd = json.load(f)
         except json.JSONDecodeError as e:
@@ -183,7 +187,7 @@ This command also can edit your fast commands."""
             user_cmd = {}
 
     user_cmd[name] = fast_command
-    with open('saved_commands.json', 'w', encoding='utf-8') as f:
+    with open(find_file_in_root('saved_commands.json'), 'w', encoding='utf-8') as f:
         json.dump(user_cmd, f, indent=2)
 
     print(f'Created new fast command: {name}')
@@ -198,13 +202,13 @@ Use 'dfc <fast command name>'"""
         create_log(f"Command name is None", 'error')
         return False
 
-    if os.path.isfile("saved_commands.json"):
+    if os.path.isfile(find_file_in_root('saved_commands.json')):
         ...
     else:
-        with open('saved_commands.json', 'w', encoding='utf-8') as f:
+        with open(find_file_in_root('saved_commands.json'), 'w', encoding='utf-8') as f:
             ... # Create file if not exists
 
-    with open('saved_commands.json', 'r') as f:
+    with open(find_file_in_root('saved_commands.json'), 'r') as f:
         try:
             user_cmd = json.load(f)
         except json.JSONDecodeError as e:
@@ -218,7 +222,7 @@ Use 'dfc <fast command name>'"""
         create_log(f"Fast command not found", 'error')
         return False
     
-    with open('saved_commands.json', 'w', encoding='utf-8') as f:
+    with open(find_file_in_root('saved_commands.json'), 'w', encoding='utf-8') as f:
         json.dump(user_cmd, f, indent=2)
     
     print(f'Command {args[0]} deleted!')
@@ -230,10 +234,10 @@ def view_fast_commands_command(args: List[str] = None):
     if os.path.isfile("saved_commands.json"):
         ...
     else:
-        with open('saved_commands.json', 'w', encoding='utf-8') as f:
+        with open(find_file_in_root('saved_commands.json'), 'w', encoding='utf-8') as f:
             ... # Create file if not exists
 
-    with open('saved_commands.json', 'r') as f:
+    with open(find_file_in_root('saved_commands.json'), 'r') as f:
         try:
             user_cmd = json.load(f)
         except json.JSONDecodeError as e:

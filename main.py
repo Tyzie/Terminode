@@ -2,6 +2,8 @@ import os
 from typing import List
 from datetime import datetime
 
+from prompt_toolkit import prompt, PromptSession
+
 import config
 from sys_controller import execute_system_command
 import commands #This import need for loading built-in module
@@ -22,6 +24,7 @@ class Terminode:
         self.version = config.console_version
         self.cur_dir = os.getcwd()
         self.username = config.username
+        self.session = PromptSession()
         self.prompt = f"{now:{time_format}} | {self.username} | {self.cur_dir} | "
         self.commands = commands_return()
 
@@ -77,7 +80,7 @@ class Terminode:
                 create_log(f"Error: {e}", "error")
 
     def update_prompt(self):
-        self.prompt = f"{now:{time_format}} | {self.username} | {os.getcwd()} | "
+        self.prompt = f"{now:{time_format}} | {self.username} | {self.cur_dir} | "
 
 terminal = Terminode()
 terminal.run()

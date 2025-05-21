@@ -6,6 +6,8 @@ import inspect
 
 import config
 from logs_contoller import create_log
+from sys_controller import (find_file_in_root,
+                            get_script_root)
 
 COMMANDS: Dict[str, Callable] = {}
 MODULES: Dict[str, Callable] = {}
@@ -35,7 +37,8 @@ def register_command(name: str, category: str, func: Callable):
     create_log(f"Registered command: {name} with category {category}", "info")
 
 def load_modules(folder_path: str):
-    folder = Path(folder_path)
+    sc_folder = Path(get_script_root())
+    folder = Path(sc_folder / folder_path)
     
     for file in folder.glob("*.py"):
         module_name = file.stem
@@ -49,7 +52,8 @@ def load_modules(folder_path: str):
             for _, func in inspect.getmembers(module, inspect.isfunction):
                 if hasattr(func, "_is_command"):
                     cmd_name = getattr(func, "_command_name", func.__name__)
-                    COMMANDS[cmd_name] = func
+                    cmd_ctgr = getattr(func, "_command_category")
+                    register_command(cmd_name, cmd_ctgr, func)
                     
         except ImportError as e:
             print(f"Loading error {module_name}: {e}")

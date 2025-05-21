@@ -1,10 +1,11 @@
 # Terminode
 
-[![wakatime](https://wakatime.com/badge/user/8cd3262f-0285-4bdc-9986-ca6d4ed03976/project/9be3619a-cf12-44e4-a156-d4f4a376da79.svg)](https://wakatime.com/badge/user/8cd3262f-0285-4bdc-9986-ca6d4ed03976/project/9be3619a-cf12-44e4-a156-d4f4a376da79)
+tyZie stats: [![wakatime](https://wakatime.com/badge/user/8cd3262f-0285-4bdc-9986-ca6d4ed03976/project/9be3619a-cf12-44e4-a156-d4f4a376da79.svg)](https://wakatime.com/badge/user/8cd3262f-0285-4bdc-9986-ca6d4ed03976/project/9be3619a-cf12-44e4-a156-d4f4a376da79)  
+Repo stats: [![wakatime](https://wakatime.com/badge/github/Tyzie/Terminode.svg)](https://wakatime.com/badge/github/Tyzie/Terminode)  
 
 ## Terminode - console app, that can make work some faster.
 Terminode is console app. But in future it will get an terminal emulator.
-Our app is open-source, and everyone can edit it.
+Our app is open-source, and everyone can edit it (and create mods, that called modules).
 
 For work need Python 3.x
 
@@ -14,10 +15,15 @@ For work need Python 3.x
 ``` bash
 git clone https://github.com/Tyzie/Terminode
 ```
-#### 2. Go to folder `console`
 
-After this there are two ways to start app.
+#### 2. Create venv and install libraries
+``` bash
+python -m venv venv
+pip install -r requirements.txt
+```
 
+#### 3. Start Terminode
+Two ways to start console app  
 1. Find file `start.bat` and run it. Terminode will start up automatically.
 
 2. Find file `main.py`. Run console and write:
@@ -28,7 +34,8 @@ After this Terminode will load in your terminal.
 
 ### Working with commands
 Now Terminode have small list of commands.
-If you want to view this list - write 'help' in Terminode.
+If you want to view this list - write 'help' in Terminode.  
+Category help - 'help [category]'
 
 ### Changing settings
 The settings of Terminode are located in the file `config.py`.
@@ -38,7 +45,7 @@ To change the name, enter new data into the variable `username`
 
 Example: `username = 'terminode'`
 
-Also you can work with logs. To turn of logs use variable `use_logs` (default - True)
+Also you can work with logs. To turn on logs use variable `use_logs` (default - False)
 
 To change logs max size use variable `log_max_size`
 

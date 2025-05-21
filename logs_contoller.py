@@ -5,8 +5,15 @@ from loguru import logger
 
 import config
 
+def get_script_root():
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).parent
+    else:
+        return Path(__file__).parent.resolve()
+
 if config.use_logs == True:
-    log_path = Path('logs')
+    sc_folder = get_script_root()
+    log_path = Path(sc_folder / 'logs')
     log_path.mkdir(exist_ok=True)
 
     logger.remove()

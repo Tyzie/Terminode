@@ -40,6 +40,7 @@ class Terminode:
             try:
                 user_input = input(self.prompt).strip()
                 if not user_input:
+                    self.update_prompt()
                     continue
                 
                 parts = self.parse_input(user_input)
@@ -80,7 +81,10 @@ class Terminode:
                 create_log(f"Error: {e}", "error")
 
     def update_prompt(self):
-        self.prompt = f"{now:{time_format}} | {self.username} | {self.cur_dir} | "
+        now = datetime.now()
+        time_format = '%H:%M:%S'
+
+        self.prompt = f"{now:{time_format}} | {self.username} | {os.getcwd()} | "
 
 terminal = Terminode()
 terminal.run()

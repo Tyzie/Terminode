@@ -1,3 +1,7 @@
 # Python
 __pycache__
 venv
+
+# App
+logs
+saved_commands.json

@@ -78,7 +78,9 @@ class CommandHandler:
             "help": self.help,
             "pwd": self.pwd,
             "cd": self.cd,
+            "..": self.cd_dot,
             "exit": self.exit,
+            "ls": self.ls,
         }
 
     def register(self, name: str, command: Command) -> None:
@@ -112,17 +114,64 @@ class CommandHandler:
         return command(parts[1:])
 
     def help(self, _args: list[str]) -> bool:
-        print(f"Commands: {', '.join(sorted(self.commands))}")
-        print("Other commands execute by your system.")
+        """Print available commands and their descriptions.
+        Type help [command] to see more information about a command."""
+        if _args != []:
+            command_name = _args[0]
+            command = self.commands.get(command_name)
+            if command:
+                if command.__doc__:
+                    print(f"Additional information about command: {command_name}")
+                    print(command.__doc__)
+                else:
+                    print(f"No available information about command: {command_name}")
+            else:
+                print(f"Command not found in Terminode: {command_name}")
+        else:
+            print(f"Commands: {', '.join(sorted(self.commands))}")
+            print("Other commands execute by your system.")
+            print("Type help [command] to see more information about a command.")
+        return True
+
+    @staticmethod
+    def ls(args: list[str]) -> bool:
+        """Print all files in current directory."""
+        files = os.listdir(os.getcwd())
+        print(f"Files in directory {os.path.split(os.getcwd())[-1]}: {len(files)}")
+        print("")
+
+        for file in files:
+            path = Path(file)
+            filetype = "Directory" if path.is_dir() else "File"
+            filesize = path.stat().st_size if path.is_file() else 0
+
+            if filesize:
+                if filesize >= 1024**2:
+                    filesize_text = f"{filesize / 1024**2:.2f} MB"
+                elif filesize >= 1024:
+                    filesize_text = f"{filesize / 1024:.2f} KB"
+                else:
+                    filesize_text = f"{filesize} B"
+            
+            else:
+                filesize_text = "-"
+
+            print(f"{filetype} | {file} {filesize_text}")
+
+        print("")
+
         return True
 
     @staticmethod
     def pwd(_args: list[str]) -> bool:
+        """Print current working directory."""
         print(os.getcwd())
         return True
 
     @staticmethod
     def cd(args: list[str]) -> bool:
+        """Change current working directory.
+        Usage only "cd" will change to the home directory."""
         if len(args) > 1:
             print("Usage: cd [path]", file=sys.stderr)
             return True
@@ -135,7 +184,17 @@ class CommandHandler:
         return True
 
     @staticmethod
+    def cd_dot(args: list[str]) -> bool:
+        """Change directory to the parent directory"""
+        try:
+            os.chdir("..")
+        except OSError as error:
+            print(f"Could not change directory: {error}", file=sys.stderr)
+        return True
+
+    @staticmethod
     def exit(_args: list[str]) -> bool:
+        """Exit the Terminode."""
         return False
 
 
@@ -156,16 +215,22 @@ def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
 
         module = importlib.util.module_from_spec(spec)
         sys.modules[import_name] = module
+
         try:
             spec.loader.exec_module(module)
             register = getattr(module, "register", None)
+
             if not callable(register):
                 raise AttributeError("in the module there must be a function register(handler)")
+            
             config = getattr(module, "CONFIG", None)
+
             if not isinstance(config, ModuleConfig):
                 raise TypeError("in the module there must be an object CONFIG of type ModuleConfig")
+            
             register(handler)
             loaded.append(config)
+
         except Exception as error:
             sys.modules.pop(import_name, None)
             print(f"Error in module {path}: {error}", file=sys.stderr)

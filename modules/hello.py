@@ -11,6 +11,7 @@ CONFIG = ModuleConfig(
 
 
 def hello(args):
+    """Print an example hello message"""
     name = " ".join(args) or "user"
     print(f"Hello, {name}!")
     return True

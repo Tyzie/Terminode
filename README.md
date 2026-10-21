@@ -45,6 +45,7 @@ CONFIG = ModuleConfig(
 
 # Example function
 def example():
+    """Example docs"""
     print(f"Example print")
     return True
 

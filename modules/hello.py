@@ -6,7 +6,7 @@ from module_config import ModuleConfig
 CONFIG = ModuleConfig(
     name="Hello, example!",
     description="Example simple module for Terminode",
-    version="1.0.0",
+    version="1.0.0"
 )
 
 
@@ -18,4 +18,4 @@ def hello(args):
 
 
 def register(handler):
-    handler.register("hello", hello)
+    handler.register_command("hello", hello)

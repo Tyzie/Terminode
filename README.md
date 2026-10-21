@@ -26,31 +26,23 @@ startup.
 To add a Python command, place a file in the `modules` directory. 
 
 In it, define a `CONFIG` of type `ModuleConfig` with the fields `name`,
-`description`, and `version`, then declare a `register(handler)` function and
-register the command using `handler.register("name", function)`. 
+`description`, and `version`
 
-For example, `modules/hello.py` adds the `hello [name]` command.
+Commands can register with `handler.register_command("name", function)`
+
+Customize the interface with `handler.register_interface_component(function)`.
+An interface component returns text to display at the bottom of the terminal;
+
+Prompt status providers can also be registered with
+`handler.register_prompt_provider(function)`;
+they return a short string displayed beside the prompt.
+
+Examples:
+
+- `modules/hello.py` adds the `hello [name]` command.
+- `modules/editor.py` adds `edit <file>`, which launches the editor in `$EDITOR`
+  (or `vi`/`notepad` by default).
+- `modules/system_status.py` adds `resources` and displays CPU load and RAM
+  usage at the bottom of the terminal and in prompt line.
 
 If a module fails, the error is printed to the terminal and the other modules continue loading.
-
-```python
-from module_config import ModuleConfig
-
-# Configuration for module
-CONFIG = ModuleConfig(
-    name="Example",
-    description="Example module",
-    version="1.0.0",
-)
-
-# Example function
-def example():
-    """Example docs"""
-    print(f"Example print")
-    return True
-
-# "example" - command name, example - command function
-def register(handler):
-    handler.register("example", example)
-
-```

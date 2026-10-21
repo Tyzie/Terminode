@@ -4,8 +4,10 @@ import importlib.util
 import getpass
 import os
 import shlex
+import shutil
 import subprocess
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -13,6 +15,8 @@ from module_config import ModuleConfig
 
 
 Command = Callable[[list[str]], bool]
+PromptProvider = Callable[[], str]
+InterfaceComponent = Callable[[], str]
 ROOT = Path(__file__).parent
 
 
@@ -37,24 +41,25 @@ def load_environment() -> None:
         os.environ.setdefault(key.strip(), value)
 
 
-def get_settings() -> tuple[str, str]:
+def get_settings() -> tuple[str, str, float]:
     username = os.environ.get("TERMINODE_USERNAME") or getpass.getuser()
     version = os.environ.get("TERMINODE_VERSION") or "Empty version variable"
-    return username, version
+    interface_refresh_rate = float(os.environ.get("INTERFACE_REFRESHRATE")) or 1.0
+    return username, version, interface_refresh_rate
 
 
 def show_banner(
     username: str, version: str, modules: list[ModuleConfig]
 ) -> None:
     font = {
-        "T": ("###", ".#.", ".#.", ".#.", ".#."),
-        "E": ("###", "#..", "##.", "#..", "###"),
-        "R": ("##.", "#.#", "##.", "#.#", "#.#"),
-        "M": ("#.#", "###", "###", "#.#", "#.#"),
-        "I": ("###", ".#.", ".#.", ".#.", "###"),
-        "N": ("#.#", "###", "###", "###", "#.#"),
-        "O": ("###", "#.#", "#.#", "#.#", "###"),
-        "D": ("##.", "#.#", "#.#", "#.#", "##."),
+        "T": ("#########", "....#....", "....#....", "....#....", "....#...."),
+        "E": ("#########", "##.......", "#######..", "##.......", "#########"),
+        "R": ("######..", "##...##.", "######..", "##...##.", "##....##"),
+        "M": ("##.....##", "####.####", "##.###.##", "##.....##", "##.....##"),
+        "I": ("#######", "...#...", "...#...", "...#...", "#######"),
+        "N": ("##....##", "####..##", "##.##.##", "##..####", "##....##"),
+        "O": (".#######.", "##.....##", "##.....##", "##.....##", ".#######."),
+        "D": ("######..", "##...##.", "##....##", "##...##.", "######.."),
     }
     for rows in zip(*(font[letter] for letter in "TERMINODE")):
         print("  " + "  ".join(rows).replace(".", " "))
@@ -82,9 +87,24 @@ class CommandHandler:
             "exit": self.exit,
             "ls": self.ls,
         }
+        self.prompt_providers: list[PromptProvider] = []
+        self.interface_components: list[InterfaceComponent] = []
 
-    def register(self, name: str, command: Command) -> None:
+    def register_command(self, name: str, command: Command) -> None:
         self.commands[name] = command
+
+    def register_prompt_provider(self, provider: PromptProvider) -> None:
+        self.prompt_providers.append(provider)
+
+    def get_prompt_text(self) -> str:
+        return " | ".join(
+            prompt
+            for provider in self.prompt_providers
+            if (prompt := provider())
+        )
+
+    def register_interface_component(self, component: InterfaceComponent) -> None:
+        self.interface_components.append(component)
 
     def execute(self, line: str) -> bool:
         line = line.lstrip()
@@ -198,6 +218,73 @@ class CommandHandler:
         return False
 
 
+class TerminalInterface:
+    def __init__(self, components: list[InterfaceComponent], refreshrate: float) -> None:
+        self.components = components
+        self.refresh_interval = refreshrate
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._rendered_rows: set[int] = set()
+        self._scroll_bottom: int | None = None
+        self._render_lock = threading.Lock()
+
+    def start(self) -> None:
+        if not self.components or not sys.stdout.isatty():
+            return
+
+        self._stop_event.clear()
+        self._render()
+        self._thread = threading.Thread(target=self._refresh, daemon=True)
+        self._thread.start()
+
+    def close(self) -> None:
+        if self._thread is None:
+            return
+
+        self._stop_event.set()
+        self._thread.join()
+        self._thread = None
+        with self._render_lock:
+            self._draw([])
+
+    def _refresh(self) -> None:
+        while not self._stop_event.wait(self.refresh_interval):
+            self._render()
+
+    def _render(self) -> None:
+        lines: list[str] = []
+        for component in tuple(self.components):
+            try:
+                lines.extend(component().splitlines())
+            except Exception as error:
+                print(f"Interface component failed: {error}", file=sys.stderr)
+                self.components.remove(component)
+
+        with self._render_lock:
+            self._draw(lines)
+
+    def _draw(self, lines: list[str]) -> None:
+        columns, terminal_rows = shutil.get_terminal_size(fallback=(80, 24))
+        visible_lines = lines[-max(terminal_rows - 1, 1) :]
+        first_row = terminal_rows - len(visible_lines) + 1
+        scroll_bottom = max(first_row - 1, 1)
+        current_rows = set(range(first_row, terminal_rows + 1))
+        output = ["\x1b[s"]
+        if scroll_bottom != self._scroll_bottom:
+            output.extend((f"\x1b[1;{scroll_bottom}r", "\x1b[u", "\x1b[s"))
+            self._scroll_bottom = scroll_bottom
+        for offset, line in enumerate(visible_lines):
+            output.extend(
+                (f"\x1b[{first_row + offset};1H", "\x1b[2K", line[:columns])
+            )
+        for row in sorted(self._rendered_rows - current_rows):
+            output.extend((f"\x1b[{row};1H", "\x1b[2K"))
+        output.append("\x1b[u")
+        sys.stdout.write("".join(output))
+        sys.stdout.flush()
+        self._rendered_rows = current_rows
+
+
 def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
     modules_dir = ROOT / "modules"
     modules_dir.mkdir(exist_ok=True)
@@ -240,24 +327,38 @@ def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
 
 def run_shell() -> None:
     load_environment()
-    username, version = get_settings()
+    username, version, refreshrate = get_settings()
     handler = CommandHandler()
     loaded_modules = load_modules(handler)
-    show_banner(username, version, loaded_modules)
-    prompt_char = ">" if os.name == "nt" else "$"
+    terminal_interface = TerminalInterface(handler.interface_components, refreshrate)
+    terminal_interface.start()
 
-    while True:
-        try:
-            if os.path.split(os.getcwd())[-1] == "":
-                line = input(f"{username} | {os.path.split(os.getcwd())[-1]} {prompt_char} ")
-            else:
-                line = input(f"{username} | ~/{os.path.split(os.getcwd())[-1]} {prompt_char} ")
-        except (EOFError, KeyboardInterrupt):
-            print()
-            break
+    try:
+        show_banner(username, version, loaded_modules)
+        prompt_char = ">" if os.name == "nt" else "$"
 
-        if not handler.execute(line):
-            break
+        while True:
+            try:
+                additional_prompt = handler.get_prompt_text()
+                additional_prompt_text = f" | {additional_prompt}" if additional_prompt else ""
+                if os.path.split(os.getcwd())[-1] == "":
+                    prompt = input(
+                        f"{username}{additional_prompt_text} | {os.path.split(os.getcwd())[-1]} "
+                        f"{prompt_char} "
+                    )
+                else:
+                    prompt = input(
+                        f"{username}{additional_prompt_text} | ~/{os.path.split(os.getcwd())[-1]} "
+                        f"{prompt_char} "
+                    )
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not handler.execute(prompt):
+                break
+    finally:
+        terminal_interface.close()
 
 
 if __name__ == "__main__":

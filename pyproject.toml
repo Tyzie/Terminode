@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Terminode"
+version = "0.1.0a"
+description = "A simple cross-platform command shell"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.scripts]
+terminode = "shell:run_shell"
+
+[tool.setuptools]
+py-modules = ["shell", "module_config"]
+packages = ["modules"]

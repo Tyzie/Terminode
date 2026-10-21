@@ -232,6 +232,15 @@ class TerminalInterface:
         if not self.components or not sys.stdout.isatty():
             return
 
+        if os.name == "nt":
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            stdout_handle = kernel32.GetStdHandle(-11)
+            console_mode = ctypes.c_uint()
+            if kernel32.GetConsoleMode(stdout_handle, ctypes.byref(console_mode)):
+                kernel32.SetConsoleMode(stdout_handle, console_mode.value | 0x0004)
+
         self._stop_event.clear()
         self._render()
         self._thread = threading.Thread(target=self._refresh, daemon=True)

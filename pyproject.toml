@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Terminode"
-version = "0.3.0a"
+version = "0.3.1a"
 description = "A simple cross-platform command shell"
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = ["psutil>=5.9"]
 
 [project.scripts]
 terminode = "shell:run_shell"

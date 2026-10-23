@@ -41,11 +41,13 @@ def load_environment() -> None:
         os.environ.setdefault(key.strip(), value)
 
 
-def get_settings() -> tuple[str, str, float]:
+def get_settings() -> tuple[str, str, str, float, str]:
     username = os.environ.get("TERMINODE_USERNAME") or getpass.getuser()
     version = os.environ.get("TERMINODE_VERSION") or "Empty version variable"
     interface_refresh_rate = float(os.environ.get("INTERFACE_REFRESHRATE")) or 1.0
-    return username, version, interface_refresh_rate
+    interface_visible = str(os.environ.get("INTERFACE_VISIBLE")) or "True"
+    additional_prompt = str(os.environ.get("ADDITIONAL_PROMPTLINE_TEXT")) or "True"
+    return username, version, interface_visible, interface_refresh_rate, additional_prompt
 
 
 def show_banner(
@@ -97,11 +99,13 @@ class CommandHandler:
         self.prompt_providers.append(provider)
 
     def get_prompt_text(self) -> str:
-        return " | ".join(
-            prompt
-            for provider in self.prompt_providers
-            if (prompt := provider())
-        )
+        username, version, interface_visible, refreshrate, additional_promptline = get_settings()
+        if additional_promptline == "True":
+            return " | ".join(
+                prompt
+                for provider in self.prompt_providers
+                if (prompt := provider())
+            )
 
     def register_interface_component(self, component: InterfaceComponent) -> None:
         self.interface_components.append(component)
@@ -336,11 +340,13 @@ def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
 
 def run_shell() -> None:
     load_environment()
-    username, version, refreshrate = get_settings()
+    username, version, interface_visible, refreshrate, additional_promptline = get_settings()
     handler = CommandHandler()
     loaded_modules = load_modules(handler)
-    terminal_interface = TerminalInterface(handler.interface_components, refreshrate)
-    terminal_interface.start()
+    if interface_visible == "True":
+        terminal_interface = TerminalInterface(handler.interface_components, refreshrate)
+        terminal_interface.start()
+    handler.execute("clear")
 
     try:
         show_banner(username, version, loaded_modules)
@@ -367,7 +373,8 @@ def run_shell() -> None:
             if not handler.execute(prompt):
                 break
     finally:
-        terminal_interface.close()
+        if interface_visible == True:
+            terminal_interface.close()
 
 
 if __name__ == "__main__":

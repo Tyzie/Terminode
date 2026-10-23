@@ -43,6 +43,7 @@ Examples:
 - `modules/editor.py` adds `edit <file>`, which launches the editor in `$EDITOR`
   (or `vi`/`notepad` by default).
 - `modules/system_status.py` adds `resources` and displays CPU load and RAM
-  usage at the bottom of the terminal and in prompt line.
+  usage at the bottom of the terminal and in prompt line. On Linux, it reads
+  metrics from `/proc` when `psutil` is not installed.
 
 If a module fails, the error is printed to the terminal and the other modules continue loading.

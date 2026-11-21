@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    import psutil
+    import psutil # type: ignore
 except ModuleNotFoundError as error:
     if error.name != "psutil":
         raise

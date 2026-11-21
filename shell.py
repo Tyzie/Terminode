@@ -13,6 +13,14 @@ from pathlib import Path
 
 from module_config import ModuleConfig
 
+try:
+    import readline
+except ImportError:
+    try:
+        import pyreadline3 as readline # type: ignore
+    except ImportError:
+        readline = None
+
 
 Command = Callable[[list[str]], bool]
 PromptProvider = Callable[[], str]
@@ -88,6 +96,7 @@ class CommandHandler:
             "..": self.cd_dot,
             "exit": self.exit,
             "ls": self.ls,
+            "tree": self.tree,
         }
         self.prompt_providers: list[PromptProvider] = []
         self.interface_components: list[InterfaceComponent] = []
@@ -127,15 +136,19 @@ class CommandHandler:
                     )
             except OSError as error:
                 print(f"Error to execute command: {error}", file=sys.stderr)
+            print()
             return True
 
         try:
             parts = shlex.split(line, posix=os.name != "nt")
         except ValueError as error:
             print(f"Input error: {error}", file=sys.stderr)
+            print()
             return True
 
-        return command(parts[1:])
+        result = command(parts[1:])
+        print()
+        return result
 
     def help(self, _args: list[str]) -> bool:
         """Print available commands and their descriptions.
@@ -182,8 +195,71 @@ class CommandHandler:
 
             print(f"{filetype} | {file} {filesize_text}")
 
-        print("")
+        return True
 
+    @staticmethod
+    def tree(args: list[str]) -> bool:
+        """Print a directory tree.
+        Hidden folders and hidden files are excluded by default.
+        Usage: tree [-a|--hidden] [path]"""
+        show_hidden = False
+        paths: list[str] = []
+        for arg in args:
+            if arg in ("-a", "--hidden"):
+                show_hidden = True
+            elif arg.startswith("-"):
+                print(f"Unknown tree option: {arg}", file=sys.stderr)
+                print("Usage: tree [-a|--hidden] [path]", file=sys.stderr)
+                return True
+            else:
+                paths.append(arg)
+
+        if len(paths) > 1:
+            print("Usage: tree [-a|--hidden] [path]", file=sys.stderr)
+            return True
+
+        path = Path(paths[0]).expanduser() if paths else Path.cwd()
+        try:
+            path = path.resolve()
+        except OSError as error:
+            print(f"Could not resolve path: {error}", file=sys.stderr)
+            return True
+
+        if not path.exists():
+            print(f"Path not found: {path}", file=sys.stderr)
+            return True
+
+        if not path.is_dir():
+            print(path.name)
+            return True
+
+        print(path.name or str(path))
+
+        def print_directory(directory: Path, prefix: str) -> None:
+            try:
+                entries = sorted(
+                    directory.iterdir(),
+                    key=lambda entry: (not entry.is_dir(), entry.name.lower()),
+                )
+            except OSError as error:
+                print(f"{prefix}└── [Error: {error}]", file=sys.stderr)
+                return
+
+            visible_entries = [
+                entry
+                for entry in entries
+                if show_hidden or not entry.name.startswith(".")
+            ]
+            for index, entry in enumerate(visible_entries):
+                is_last = index == len(visible_entries) - 1
+                connector = "└── " if is_last else "├── "
+                print(f"{prefix}{connector}{entry.name}")
+
+                if entry.is_dir() and not entry.is_symlink():
+                    extension = "    " if is_last else "│   "
+                    print_directory(entry, prefix + extension)
+
+        print_directory(path, "")
         return True
 
     @staticmethod
@@ -298,6 +374,32 @@ class TerminalInterface:
         self._rendered_rows = current_rows
 
 
+def configure_command_history() -> None:
+    if readline is None:
+        return
+
+    if hasattr(readline, "parse_and_bind"):
+        readline.parse_and_bind("set editing-mode emacs")
+        readline.parse_and_bind(r'"\e[A": previous-history')
+        readline.parse_and_bind(r'"\e[B": next-history')
+        readline.parse_and_bind(r'"\e[C": forward-char')
+        readline.parse_and_bind(r'"\e[D": backward-char')
+
+
+def add_command_to_history(command: str) -> None:
+    if readline is None or not command:
+        return
+
+    history_length = readline.get_current_history_length()
+    previous = (
+        readline.get_history_item(history_length)
+        if history_length > 0
+        else None
+    )
+    if previous != command:
+        readline.add_history(command)
+
+
 def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
     modules_dir = ROOT / "modules"
     modules_dir.mkdir(exist_ok=True)
@@ -341,6 +443,7 @@ def load_modules(handler: CommandHandler) -> list[ModuleConfig]:
 def run_shell() -> None:
     load_environment()
     username, version, interface_visible, refreshrate, additional_promptline = get_settings()
+    configure_command_history()
     handler = CommandHandler()
     loaded_modules = load_modules(handler)
     if interface_visible == "True":
@@ -370,6 +473,7 @@ def run_shell() -> None:
                 print()
                 break
 
+            add_command_to_history(prompt)
             if not handler.execute(prompt):
                 break
     finally:
